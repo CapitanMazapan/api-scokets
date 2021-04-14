@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS test;
+
+CREATE TABLE test(
+	idTest SERIAL NOT NULL PRIMARY KEY,
+	valor VARCHAR(50)
+);
+
+INSERT INTO test VALUES(1, 'Primer dato');
+
+SELECT * FROM test;

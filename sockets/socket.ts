@@ -2,11 +2,9 @@ import { Socket } from 'socket.io';
 import { isObject } from 'util';
 
 export const desconectar = (cliente: Socket) => {
-
     cliente.on('disconnect', () => {
         console.log('Cliente Desconectado');
     });
-
 }
 
 // Escuchar Mensajes

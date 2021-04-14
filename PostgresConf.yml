@@ -1,0 +1,117 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: actividad-namespace
+---
+# Volúmen persistente
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-postgres-vol1
+  namespace: actividad-namespace
+spec:
+  storageClassName: sc-postgres
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/postgres-vol1"
+---
+# Reclamo PV
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-postgres
+  namespace: actividad-namespace
+spec:
+  storageClassName: sc-postgres
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# StorageClass
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sc-postgres
+  namespace: actividad-namespace
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm-postgres
+  namespace: actividad-namespace
+data:
+  postgres.user: postgres
+  postgres.password: postgrespassword
+  postgres.db: postgresdb
+---
+# Deploy
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  namespace: actividad-namespace
+  labels:
+    app: postgres-server
+spec:
+  selector:
+    matchLabels:
+      app: postgres-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgres-server
+    spec:
+      containers:
+      - image: postgres:11
+        name: postgres-db1
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres-db-volume1
+        env:
+          - name: POSTGRES_USER
+            valueFrom:
+              configMapKeyRef:
+                name: cm-postgres
+                key: postgres.user
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              configMapKeyRef:
+                name: cm-postgres
+                key: postgres.password
+          - name: POSTGRES_DB
+            valueFrom:
+              configMapKeyRef:
+                name: cm-postgres
+                key: postgres.db
+      volumes:
+      - name: postgres-db-volume1
+        persistentVolumeClaim:
+           claimName: pvc-postgres
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: actividad-namespace
+spec:
+  selector:
+    app: postgres-server
+  ports:
+    - port: 5300
+      targetPort: 5432
+  type: LoadBalancer
