@@ -5,6 +5,6 @@ CREATE TABLE test(
 	valor VARCHAR(50)
 );
 
-INSERT INTO test VALUES(1, 'Primer dato');
+--INSERT INTO test VALUES(1, 'Primer dato');
 
 SELECT * FROM test;
